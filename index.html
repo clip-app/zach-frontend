@@ -12,7 +12,7 @@
 
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
-var PLAYER_COUNT = 3;
+var PLAYER_COUNT = 10;
 var currentPlayerIndex = 0;
 var players = [];
 var eventIndex = 0;
@@ -32,12 +32,14 @@ var Player = function (parentIdString) {
     }
   });
   this.state = 0; // 0 - Default
+                  // 3 - Setting up buffering
                   // 4 - Ready to play
 };
 
 Player.prototype.cueNext = function () {
   var event = events.pop();
 
+  this.state = 3;
   this.player.cueVideoById({
     videoId: event.video_id,
     startSeconds: event.start,
@@ -51,8 +53,25 @@ Player.prototype.onStateChange = function (newState) {
     case YT.PlayerState.ENDED:
       this.cueNext();
       playNext();
+      break;
+    case YT.PlayerState.PLAYING:
+      if (this.state == 3) {
+        this.player.pauseVideo();
+        this.state = 4;
+      }
+      break;
+    case YT.PlayerState.PAUSED:
+      if (this.state == 3) {
+        this.player.state = 4;
+      }
+      break;
     case YT.PlayerState.CUED:
-      this.state = 4;
+      if (this.state == 3) {
+        this.player.playVideo();
+      } else {
+        this.state = 4;
+      }
+      break;
   }
 }
 
