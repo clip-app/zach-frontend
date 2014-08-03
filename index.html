@@ -37,7 +37,7 @@ var Player = function (parentIdString) {
 };
 
 Player.prototype.cueNext = function () {
-  var event = events.pop();
+  var event = events.shift();
 
   if (event == undefined) {
     console.log("DONE");
@@ -62,6 +62,7 @@ Player.prototype.onStateChange = function (newState) {
     case YT.PlayerState.PLAYING:
       if (this.state == 3) {
         this.player.pauseVideo();
+        this.player.unMute();
       }
       break;
     case YT.PlayerState.PAUSED:
@@ -71,6 +72,7 @@ Player.prototype.onStateChange = function (newState) {
       break;
     case YT.PlayerState.CUED:
       if (this.state == 3) {
+        this.player.mute();
         this.player.playVideo();
       } else {
         this.state = 4;
