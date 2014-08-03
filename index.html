@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Attempt to beat Will</title>
+</head>
+<body>
+
+<div id="players">
+</div>
+
+<a href="javascript:void(0);" onclick="playNext();">Start</a>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+var PLAYER_COUNT = 3;
+var currentPlayerIndex = 0;
+var players = [];
+var eventIndex = 0;
+var events = [];
+
+var Player = function (parentIdString) {
+  this.player = new YT.Player(parentIdString, {
+    playerVars: {
+      enablejsapi: 1,
+      controls: 0,
+      showInfo: 0,
+      modestBranding: 1
+    },
+    events: {
+      'onStateChange': this.onStateChange.bind(this),
+      'onReady': this.onReady.bind(this)
+    }
+  });
+  this.state = 0; // 0 - Default
+                  // 4 - Ready to play
+};
+
+Player.prototype.cueNext = function () {
+  var event = events.pop();
+
+  this.player.cueVideoById({
+    videoId: event.video_id,
+    startSeconds: event.start,
+    endSeconds: event.end,
+    suggestedQuality: "240p"
+  });
+}
+
+Player.prototype.onStateChange = function (newState) {
+  switch (newState.data) {
+    case YT.PlayerState.ENDED:
+      this.cueNext();
+      playNext();
+    case YT.PlayerState.CUED:
+      this.state = 4;
+  }
+}
+
+Player.prototype.onReady = function (e) {
+  console.log("READY FOOL");
+  console.log(arguments);
+  this.cueNext();
+}
+
+function onYouTubeIframeAPIReady() {
+  var jsonReq = new XMLHttpRequest();
+  jsonReq.open("GET", "events.json", false);
+  jsonReq.send(null);
+  var json = jsonReq.responseText;
+
+  events = JSON.parse(json);
+
+  for (var i = 0; i < PLAYER_COUNT; i++) {
+    var playerDiv = document.createElement("div");
+    playerDiv.id = "player-"+i;
+    document.getElementById("players").appendChild(playerDiv);
+
+    players.push(new Player(playerDiv.id));
+  }
+}
+
+function playNext() {
+  var currentPlayer = players[currentPlayerIndex];
+  
+  if (currentPlayerIndex >= players.length-1) {
+    currentPlayerIndex = 0;
+  } else {
+    currentPlayerIndex++;
+  }
+
+  currentPlayer.player.playVideo();
+}
+</script>
+</body>
+</html>
